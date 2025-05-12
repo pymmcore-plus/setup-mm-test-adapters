@@ -30,23 +30,39 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Determine version
+    - name: Fetch release
       shell: bash
-      id: get-version
+      id: download
       run: |
+        # pick the right API endpoint
         if [ "${{ inputs.version }}" = "latest" ]; then
-          version=$(curl -s https://api.github.com/repos/pymmcore-plus/mm-test-adapters/releases/latest | jq -r .tag_name)
+          api="https://api.github.com/repos/pymmcore-plus/mm-test-adapters/releases/latest"
         else
-          version="${{ inputs.version }}"
+          api="https://api.github.com/repos/pymmcore-plus/mm-test-adapters/releases/tags/${{ inputs.version }}"
         fi
+
+        # single API call
+        json=$(curl -s "$api")
+
+        # extract tag and asset URL
+        version=$(jq -r .tag_name <<<"$json")
+        asset="mm-test-adapters-${{ runner.os }}-${{ runner.arch }}.zip"
+        download_url=$(jq -r --arg name "$asset" \
+          '.assets[] | select(.name==$name).browser_download_url' \
+          <<<"$json")
+
+        if [ -z "$download_url" ] || [ "$download_url" = "null" ]; then
+          echo "❌ Could not find $asset in release $version"
+          exit 1
+        fi
+
+        # persist for later steps / outputs
         echo "version=$version" >> $GITHUB_ENV
         echo "version=$version" >> $GITHUB_OUTPUT
+        echo "download_url=$download_url" >> $GITHUB_ENV
 
-    - name: Download adapters ZIP
-      shell: bash
-      run: |
-        url="https://github.com/pymmcore-plus/mm-test-adapters/releases/download/$version/mm-test-adapters-${{ runner.os }}-${{ runner.arch }}.zip"
-        curl -L -f -o mm-test-adapters.zip "$url"
+        # fetch the ZIP
+        curl -L -f -o mm-test-adapters.zip "$download_url"
 
     - name: Set MM_DATA_DIR
       shell: bash
