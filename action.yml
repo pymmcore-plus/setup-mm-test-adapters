@@ -34,43 +34,26 @@ runs:
       shell: bash
       id: download
       run: |
-        echo "🔍 runner.os=${{ runner.os }}, runner.arch=${{ runner.arch }}"
-
+        # 1) figure out which tag to pull
         if [ "${{ inputs.version }}" = "latest" ]; then
-          api="https://api.github.com/repos/pymmcore-plus/mm-test-adapters/releases/latest"
+          tag="latest"
         else
-          api="https://api.github.com/repos/pymmcore-plus/mm-test-adapters/releases/tags/${{ inputs.version }}"
+          tag="${{ inputs.version }}"
         fi
 
-        echo "⚙️  Fetching release metadata from $api"
-        json=$(curl -sf \
-          -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: Bearer $GITHUB_TOKEN" \
-          "$api") || {
-           echo "❌ GitHub API request failed"
-           exit 1
-         }
+        # 2) download the matching asset in one go
+        gh release download "$tag" \
+          --repo pytmmcore-plus/mm-test-adapters \
+          --pattern "mm-test-adapters-${{ runner.os }}-${{ runner.arch }}.zip" \
+          --clobber \
+          --dir .
 
-        # show just the tag and asset names for debugging
-        echo "ℹ️  Release: $(jq -c '{ tag:.tag_name, assets:.assets[].name }' <<<"$json")"
+        # gh will drop the file with its original name; rename for consistency
+        mv "mm-test-adapters-${{ runner.os }}-${{ runner.arch }}.zip" mm-test-adapters.zip
 
-        version=$(jq -r .tag_name <<<"$json")
-        asset="mm-test-adapters-${{ runner.os }}-${{ runner.arch }}.zip"
-        download_url=$(jq -r --arg name "$asset" \
-          '.assets[] | select(.name==$name).browser_download_url' \
-          <<<"$json")
-
-        if [ -z "$download_url" ] || [ "$download_url" = "null" ]; then
-          echo "❌ Asset $asset not found in release $version"
-          exit 1
-        fi
-
-        echo "⬇️  Downloading $asset"
-        curl -L -f -o mm-test-adapters.zip "$download_url"
-
-        # export version for downstream
-        echo "version=$version" >> $GITHUB_ENV
-        echo "version=$version" >> $GITHUB_OUTPUT
+        # record “version” for downstream steps/outputs
+        echo "version=$tag" >> $GITHUB_ENV
+        echo "version=$tag" >> $GITHUB_OUTPUT
 
     - name: Set MM_DATA_DIR
       shell: bash
