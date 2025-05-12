@@ -34,17 +34,23 @@ runs:
       shell: bash
       id: download
       run: |
-        # pick the right API endpoint
+        echo "🔍 runner.os=${{ runner.os }}, runner.arch=${{ runner.arch }}"
+
         if [ "${{ inputs.version }}" = "latest" ]; then
           api="https://api.github.com/repos/pymmcore-plus/mm-test-adapters/releases/latest"
         else
           api="https://api.github.com/repos/pymmcore-plus/mm-test-adapters/releases/tags/${{ inputs.version }}"
         fi
 
-        # single API call
-        json=$(curl -s "$api")
+        echo "⚙️  Fetching release metadata from $api"
+        json=$(curl -sf -H "Accept: application/vnd.github.v3+json" "$api") || {
+          echo "❌ GitHub API request failed"
+          exit 1
+        }
 
-        # extract tag and asset URL
+        # show just the tag and asset names for debugging
+        echo "ℹ️  Release: $(jq -c '{ tag:.tag_name, assets:.assets[].name }' <<<"$json")"
+
         version=$(jq -r .tag_name <<<"$json")
         asset="mm-test-adapters-${{ runner.os }}-${{ runner.arch }}.zip"
         download_url=$(jq -r --arg name "$asset" \
@@ -52,17 +58,16 @@ runs:
           <<<"$json")
 
         if [ -z "$download_url" ] || [ "$download_url" = "null" ]; then
-          echo "❌ Could not find $asset in release $version"
+          echo "❌ Asset $asset not found in release $version"
           exit 1
         fi
 
-        # persist for later steps / outputs
+        echo "⬇️  Downloading $asset"
+        curl -L -f -o mm-test-adapters.zip "$download_url"
+
+        # export version for downstream
         echo "version=$version" >> $GITHUB_ENV
         echo "version=$version" >> $GITHUB_OUTPUT
-        echo "download_url=$download_url" >> $GITHUB_ENV
-
-        # fetch the ZIP
-        curl -L -f -o mm-test-adapters.zip "$download_url"
 
     - name: Set MM_DATA_DIR
       shell: bash
