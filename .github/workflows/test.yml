@@ -4,70 +4,27 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
-  test-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Run action
-        uses: ./
-        with:
-          destination: ./test-output
-          version: latest
-      
-      - name: Verify files
-        run: |
-          ls -la ./test-output
-          # Test that we have the expected directory structure for Linux
-          if [ ! -d "./test-output/pymmcore-plus/mm/Micro-Manager-"* ]; then
-            echo "Error: Micro-Manager directory not found"
-            exit 1
-          fi
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest, macos-13]
 
-  test-macos:
-    runs-on: macos-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Run action
+      - uses: actions/checkout@v4
+      - id: setup-mm
         uses: ./
-        with:
-          destination: ./test-output
-          version: latest
-      
-      - name: Verify files
-        run: |
-          ls -la ./test-output
-          # Test that we have the expected directory structure for macOS
-          if [ ! -d "./test-output/pymmcore-plus/mm/Micro-Manager-"* ]; then
-            echo "Error: Micro-Manager directory not found"
-            exit 1
-          fi
 
-  test-windows:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Run action
-        uses: ./
-        with:
-          destination: ./test-output
-          version: latest
-      
-      - name: Verify files
-        shell: bash
+      - name: Verify extraction
         run: |
-          ls -la ./test-output
-          # Test that we have the expected directory structure for Windows
-          if [ ! -d "./test-output/pymmcore-plus/pymmcore-plus/mm/Micro-Manager-"* ]; then
-            echo "Error: Micro-Manager directory not found"
+          echo "▶ Using version: ${{ steps.setup-mm.outputs.version }}"
+          echo "▶ Install path: ${{ steps.setup-mm.outputs.mm-data-dir }}"
+          expected="${{ steps.setup-mm.outputs.mm-data-dir }}/Micro-Manager-${{ steps.setup-mm.outputs.version }}"
+          if [ ! -d "$expected" ]; then
+            echo "❌ Extracted directory not found at $expected"
             exit 1
           fi
+          echo "✅ Found $expected"
