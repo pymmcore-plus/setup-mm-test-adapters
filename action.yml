@@ -25,7 +25,7 @@ outputs:
     value: ${{ steps.get-version.outputs.version }}
   mm-data-dir:
     description: Directory where adapters were extracted
-    value: ${{ env.MM_DATA_DIR }}
+    value: ${{ steps.set-path.outputs.mm-data-dir }}
 
 runs:
   using: composite
@@ -62,15 +62,14 @@ runs:
           esac
         fi
 
-        ver=${{ steps.get-version.outputs.version }}
-        out="$base/Micro-Manager-$ver"
-        echo "mm-data-dir=$out" >> $GITHUB_ENV
-        echo "mm-data-dir=$out" >> $GITHUB_OUTPUT
+        # build final path and export only as a STEP OUTPUT
+        mm_out="$base/Micro-Manager-$version"
+        echo "mm-data-dir=$mm_out" >> $GITHUB_OUTPUT
 
     - name: Extract adapters
       shell: bash
       run: |
-        out=${{ steps.set-path.outputs.mm-data-dir }}
+        out="${{ steps.set-path.outputs.mm-data-dir }}"
         mkdir -p "$out"
         unzip -o mm-test-adapters.zip -d "$out"
         rm mm-test-adapters.zip
