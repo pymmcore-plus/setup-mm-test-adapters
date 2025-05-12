@@ -40,6 +40,7 @@ runs:
           version="${{ inputs.version }}"
         fi
         echo "version=$version" >> $GITHUB_ENV
+        echo "version=$version" >> $GITHUB_OUTPUT
 
     - name: Download adapters ZIP
       shell: bash
@@ -60,13 +61,16 @@ runs:
             Linux)   base="$HOME/.local/share/pymmcore-plus/mm" ;;
           esac
         fi
-        echo "MM_DATA_DIR=$base" >> $GITHUB_ENV
+
+        ver=${{ steps.get-version.outputs.version }}
+        out="$base/Micro-Manager-$ver"
+        echo "mm-data-dir=$out" >> $GITHUB_ENV
+        echo "mm-data-dir=$out" >> $GITHUB_OUTPUT
 
     - name: Extract adapters
       shell: bash
       run: |
-        ver=${{ steps.get-version.outputs.version }}
-        out="$MM_DATA_DIR/Micro-Manager-$ver"
+        out=${{ steps.set-path.outputs.mm-data-dir }}
         mkdir -p "$out"
         unzip -o mm-test-adapters.zip -d "$out"
         rm mm-test-adapters.zip
