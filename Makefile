@@ -1,9 +1,12 @@
-test:
-	ACT=1 act -j test-action
+.PHONY: all tag-release
 
-test-debug:
-	ACT=1 act -j test-action -v
+# Default action does nothing to avoid accidental runs
+all:
+	@echo "No default action"
 
-# Build a Docker image with required tools for testing
-build-test-image:
-	docker build -t mm-test-adapters-action-test -f Dockerfile .
+# Use this to create a release
+tag-release:
+	@echo "Creating Git tag for release..."
+	@read -p "Version number (e.g. v1.0.0): " VERSION; \
+	git tag -a $$VERSION -m "Release $$VERSION"; \
+	echo "Tag $$VERSION created. Push with: git push origin $$VERSION"

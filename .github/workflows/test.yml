@@ -1,0 +1,73 @@
+name: Test Action
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Run action
+        uses: ./
+        with:
+          destination: ./test-output
+          version: latest
+      
+      - name: Verify files
+        run: |
+          ls -la ./test-output
+          # Test that we have the expected directory structure for Linux
+          if [ ! -d "./test-output/pymmcore-plus/mm/Micro-Manager-"* ]; then
+            echo "Error: Micro-Manager directory not found"
+            exit 1
+          fi
+
+  test-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Run action
+        uses: ./
+        with:
+          destination: ./test-output
+          version: latest
+      
+      - name: Verify files
+        run: |
+          ls -la ./test-output
+          # Test that we have the expected directory structure for macOS
+          if [ ! -d "./test-output/pymmcore-plus/mm/Micro-Manager-"* ]; then
+            echo "Error: Micro-Manager directory not found"
+            exit 1
+          fi
+
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Run action
+        uses: ./
+        with:
+          destination: ./test-output
+          version: latest
+      
+      - name: Verify files
+        shell: bash
+        run: |
+          ls -la ./test-output
+          # Test that we have the expected directory structure for Windows
+          if [ ! -d "./test-output/pymmcore-plus/pymmcore-plus/mm/Micro-Manager-"* ]; then
+            echo "Error: Micro-Manager directory not found"
+            exit 1
+          fi
