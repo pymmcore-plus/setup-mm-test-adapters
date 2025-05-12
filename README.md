@@ -3,60 +3,42 @@
 A GitHub Action that downloads and installs platform-specific Micro-Manager test device adapters
 from the [mm-test-adapters](https://github.com/pymmcore-plus/mm-test-adapters/releases) repository.
 
-## Features
-
-- Automatically detects runner OS (Linux, macOS, Windows) and architecture (X64, ARM64).
-- Downloads the appropriate release file from the GitHub repository.
-- Extracts files to platform-specific locations following the platformdirs convention:
-  - **Windows**: `[destination]/pymmcore-plus/pymmcore-plus/mm/Micro-Manager-[version]`
-  - **macOS**: `[destination]/pymmcore-plus/mm/Micro-Manager-[version]`
-  - **Linux**: `[destination]/pymmcore-plus/mm/Micro-Manager-[version]`
-
 ## Usage
 
 ```yaml
 - name: Install MM test adapters
-  uses: pymmcore-plus/setup-mm-test-adapters@v1
+  uses: pymmcore-plus/setup-mm-test-adapters@main
   with:
+    version: latest  # or a specific YYYYMMDD version
     destination: ./mm-test-adapters
-    version: latest  # or a specific version
 ```
 
 ## Inputs
 
 | Name | Description | Required | Default |
 |------|-------------|----------|---------|
-| `destination` | Directory where test adapters will be installed | Yes | |
 | `version` | Version to install | No | `latest` |
+| `destination` | Directory where test adapters will be installed | No | _See below_ |
 
-## Example workflow
+If `destination` is not not provided, adapters will be installed into a
+`Micro-Manager-YYYYMMDD` folder inside the  default
+[pymmcore-plus](https://github.com/pymmcore-plus/pymmcore-plus) install location
 
-```yaml
-name: Test with MM device adapters
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+- **Windows**: `$LOCALAPPDATA/pymmcore-plus/pymmcore-plus/mm`
+- **macOS**: `$HOME/Library/Application Support/pymmcore-plus/mm`
+- **Linux**: `$HOME/.local/share/pymmcore-plus/mm`
 
-jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup MM test adapters
-        uses: pymmcore-plus/setup-mm-test-adapters@v1
-        with:
-          destination: ./mm-test-adapters
-      
-      - name: Run tests with adapters
-        run: |
-          # Your tests here
-          python -c "import os; print(os.listdir('./mm-test-adapters'))"
-```
+> [!TIP]
+> *These are the directories that [`mmcore
+> install`](https://pymmcore-plus.github.io/pymmcore-plus/install/#installing-micro-manager-device-adapters)
+> installs to, and where
+> [`pymmcore_plus.find_micro_manager()`](https://pymmcore-plus.github.io/pymmcore-plus/api/utils/#pymmcore_plus.find_micromanager)
+> will look for Micro-Manager installations at runtime.*
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| `version` | Resolved adapter version (`YYYYMMDD`) |
+| `destination` | Final directory into which the adapters were extracted |
