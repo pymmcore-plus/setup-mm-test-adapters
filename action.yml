@@ -43,10 +43,13 @@ runs:
         fi
 
         echo "⚙️  Fetching release metadata from $api"
-        json=$(curl -sf -H "Accept: application/vnd.github.v3+json" "$api") || {
-          echo "❌ GitHub API request failed"
-          exit 1
-        }
+        json=$(curl -sf \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: Bearer $GITHUB_TOKEN" \
+          "$api") || {
+           echo "❌ GitHub API request failed"
+           exit 1
+         }
 
         # show just the tag and asset names for debugging
         echo "ℹ️  Release: $(jq -c '{ tag:.tag_name, assets:.assets[].name }' <<<"$json")"
