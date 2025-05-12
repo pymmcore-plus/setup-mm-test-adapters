@@ -1,66 +1,89 @@
 name: Setup Micro-Manager Test Device Adapters
 
+description: >
+  Downloads a specified or latest release of the pymmcore-plus test device adapters
+  and extracts them into the given destination directory (or to sensible OS defaults).
+
 inputs:
   destination:
-    description: Destination directory for the test device adapters.
-    required: true
+    description: |
+      (Optional) Destination directory for the test device adapters.
+      If empty, defaults to:
+        - Windows: %LOCALAPPDATA%\pymmcore-plus\pymmcore-plus\mm
+        - macOS: ~/Library/Application Support/pymmcore-plus/mm
+        - Linux: ~/.local/share/pymmcore-plus/mm
+    required: false
+    default: ""
   version:
-    description: Version of the test device adapters to install.
+    description: Version tag to install (or "latest")
     required: false
     default: "latest"
+outputs:
+  version:
+    description: Resolved adapter version
+    value: ${{ steps.get-version.outputs.version }}
+  mm-data-dir:
+    description: Directory where adapters were extracted
+    value: ${{ env.MM_DATA_DIR }}
 
 runs:
   using: composite
   steps:
-    - name: Get release version
-      id: version
+    - name: Determine version
+      id: get-version
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        result-encoding: string
+        script: |
+          const requested = inputs.version;
+          const resolved = requested === 'latest'
+            ? (await github.rest.repos.getLatestRelease({
+                owner: 'pymmcore-plus',
+                repo:  'mm-test-adapters'
+              })).data.tag_name
+            : requested;
+          core.setOutput('version', resolved);
+
+    - name: Download adapters ZIP
+      uses: actions/download-release@v2
+      with:
+        owner: pymmcore-plus
+        repo: mm-test-adapters
+        tag: ${{ steps.get-version.outputs.version }}
+        pattern: 'mm-test-adapters-${{ runner.os }}-${{ runner.arch }}.zip'
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set MM_DATA_DIR
+      id: set-path
       shell: bash
       run: |
-        if [ "${{ inputs.version }}" = "latest" ]; then
-          version=$(curl -s https://api.github.com/repos/pymmcore-plus/mm-test-adapters/releases/latest | jq -r .tag_name)
+        # If the user passed a destination, use it; otherwise pick an OS-specific default
+        if [ -n "${{ inputs.destination }}" ]; then
+          base="${{ inputs.destination }}"
         else
-          version="${{ inputs.version }}"
+          case "${{ runner.os }}" in
+            Windows)
+              base="$LOCALAPPDATA/pymmcore-plus/pymmcore-plus/mm"
+              ;;
+            macOS)
+              base="$HOME/Library/Application Support/pymmcore-plus/mm"
+              ;;
+            Linux)
+              base="$HOME/.local/share/pymmcore-plus/mm"
+              ;;
+          esac
         fi
 
-        echo "version=$version" >> $GITHUB_ENV
-        echo "Using version: $version"
+        # Export and persist for later steps
+        export MM_DATA_DIR="$base"
+        echo "MM_DATA_DIR=$MM_DATA_DIR" >> $GITHUB_ENV
 
-    - name: Download release file
+    - name: Extract adapters
       shell: bash
       run: |
-        url="https://github.com/pymmcore-plus/mm-test-adapters/releases/download/$version/mm-test-adapters-${{ runner.os }}-${{ runner.arch }}.zip"
-        echo "Downloading from: $url"
-        curl -L -o mm-test-adapters.zip "$url"
-
-    - name: Set Windows path
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |
-        # On Windows, use %LOCALAPPDATA%\pymmcore-plus\pymmcore-plus\mm
-        echo "MM_DATA_DIR=${{ inputs.destination }}/pymmcore-plus/pymmcore-plus/mm" >> $GITHUB_ENV
-
-    - name: Set macOS path
-      if: runner.os == 'macOS'
-      shell: bash
-      run: |
-        # On macOS, use ~/Library/Application Support/pymmcore-plus/mm
-        echo "MM_DATA_DIR=${{ inputs.destination }}/pymmcore-plus/mm" >> $GITHUB_ENV
-
-    - name: Set Linux path
-      if: runner.os == 'Linux'
-      shell: bash
-      run: |
-        # On Linux, use ~/.local/share/pymmcore-plus/mm
-        echo "MM_DATA_DIR=${{ inputs.destination }}/pymmcore-plus/mm" >> $GITHUB_ENV
-
-    - name: Extract files
-      shell: bash
-      run: |
-        EXTRACT_DIR="$MM_DATA_DIR/Micro-Manager-${{ env.version }}"
-        
-        mkdir -p "$EXTRACT_DIR"
-        unzip mm-test-adapters.zip -d "$EXTRACT_DIR"
-        
-        echo "Files extracted to: $EXTRACT_DIR"
-        ls -la "$EXTRACT_DIR"
-        rm mm-test-adapters.zip
+        ver=${{ steps.get-version.outputs.version }}
+        out="$MM_DATA_DIR/Micro-Manager-$ver"
+        mkdir -p "$out"
+        unzip -o "mm-test-adapters-${{ runner.os }}-${{ runner.arch }}.zip" -d "$out"
+        rm "mm-test-adapters-${{ runner.os }}-${{ runner.arch }}.zip"
