@@ -25,10 +25,9 @@ jobs:
           echo "▶ Using version: ${{ steps.setup-mm.outputs.version }}"
           echo "▶ Install path: ${{ steps.setup-mm.outputs.mm-data-dir }}"
           expected="${{ steps.setup-mm.outputs.mm-data-dir }}"
-          if [ ! -d $expected ]; then
+          if [ ! -d "$expected" ]; then
             echo "❌ Extracted directory not found at $expected"
             exit 1
           fi
-          echo "✅ Found $expected"
-          echo "Contents of $expected:"
-          ls -la $expected
+          echo "✅ Found $expected, listing contents:"
+          ls -la "$expected"
