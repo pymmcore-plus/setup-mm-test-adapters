@@ -19,13 +19,15 @@ jobs:
         uses: ./
 
       - name: Verify extraction
+        shell: bash
         run: |
           echo "▶ Using version: ${{ steps.setup-mm.outputs.version }}"
           echo "▶ Install path: ${{ steps.setup-mm.outputs.mm-data-dir }}"
-          if [ ! -d "${{ steps.setup-mm.outputs.mm-data-dir }}" ]; then
+          expected="${{ steps.setup-mm.outputs.mm-data-dir }}"
+          if [ ! -d $expected ]; then
             echo "❌ Extracted directory not found at $expected"
             exit 1
           fi
           echo "✅ Found $expected"
           echo "Contents of $expected:"
-          ls -la "${{ steps.setup-mm.outputs.mm-data-dir }}"
+          ls -la $expected
