@@ -9,6 +9,7 @@ from the [mm-test-adapters](https://github.com/pymmcore-plus/mm-test-adapters/re
 - name: Install MM test adapters
   uses: pymmcore-plus/setup-mm-test-adapters@main
   with:
+    # all inputs are optional
     version: latest  # or a specific YYYYMMDD version
     destination: ./mm-test-adapters
 ```
