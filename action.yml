@@ -34,26 +34,17 @@ runs:
       shell: bash
       id: download
       run: |
-        # 1) figure out which tag to pull
+        repo="pymmcore-plus/mm-test-adapters"
+        pattern="*${{ runner.os }}-${{ runner.arch }}.zip"
+
         if [ "${{ inputs.version }}" = "latest" ]; then
-          tag="latest"
+          tag=$(gh release view -R "$repo" --json tagName --jq .tagName)
         else
           tag="${{ inputs.version }}"
         fi
-
-        # 2) download the matching asset in one go
-        gh release download "$tag" \
-          --repo pytmmcore-plus/mm-test-adapters \
-          --pattern "mm-test-adapters-${{ runner.os }}-${{ runner.arch }}.zip" \
-          --clobber \
-          --dir .
-
-        # gh will drop the file with its original name; rename for consistency
-        mv "mm-test-adapters-${{ runner.os }}-${{ runner.arch }}.zip" mm-test-adapters.zip
-
-        # record “version” for downstream steps/outputs
-        echo "version=$tag" >> $GITHUB_ENV
         echo "version=$tag" >> $GITHUB_OUTPUT
+
+        gh release download "$tag" -R "$repo" -p "$pattern" --clobber -O release-archive.zip
 
     - name: Set MM_DATA_DIR
       shell: bash
@@ -69,14 +60,12 @@ runs:
           esac
         fi
 
-        # build final path and export only as a STEP OUTPUT
-        mm_out="$base/Micro-Manager-$version"
-        echo "mm-data-dir=$mm_out" >> $GITHUB_OUTPUT
+        echo "mm-data-dir=$base/Micro-Manager-$version" >> $GITHUB_OUTPUT
 
     - name: Extract adapters
       shell: bash
       run: |
         out="${{ steps.set-path.outputs.mm-data-dir }}"
         mkdir -p "$out"
-        unzip -o mm-test-adapters.zip -d "$out"
-        rm mm-test-adapters.zip
+        unzip -o release-archive.zip -d "$out"
+        rm release-archive.zip
