@@ -35,10 +35,7 @@ runs:
       id: get-version
       run: |
         if [ "${{ inputs.version }}" = "latest" ]; then
-          # gh will automatically use $GITHUB_TOKEN
-          version=$(gh api \
-            repos/pymmcore-plus/mm-test-adapters/releases/latest \
-            --jq .tag_name)
+          version=$(curl -s https://api.github.com/repos/pymmcore-plus/mm-test-adapters/releases/latest | jq -r .tag_name)
         else
           version="${{ inputs.version }}"
         fi
