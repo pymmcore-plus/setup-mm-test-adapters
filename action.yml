@@ -49,6 +49,8 @@ runs:
     - name: Set MM_DATA_DIR
       shell: bash
       id: set-path
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         if [ -n "${{ inputs.destination }}" ]; then
           base="${{ inputs.destination }}"
