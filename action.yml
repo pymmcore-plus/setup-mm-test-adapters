@@ -1,7 +1,7 @@
 name: Setup Micro-Manager Test Device Adapters
 
 description: >
-  Downloads a specified or latest release of the pymmcore-plus test device adapters
+  Downloads a specified or latest release of the micr-manager test device adapters
   and extracts them into the given destination directory (or to sensible OS defaults).
 
 inputs:
@@ -34,7 +34,7 @@ runs:
       shell: bash
       id: download
       run: |
-        repo="pymmcore-plus/mm-test-adapters"
+        repo="micro-manager/mm-test-adapters"
         pattern="*${{ runner.os }}-${{ runner.arch }}.zip"
 
         if [ "${{ inputs.version }}" = "latest" ]; then
