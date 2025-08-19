@@ -33,21 +33,31 @@ runs:
     - name: Fetch release
       shell: bash
       id: download
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         repo="micro-manager/mm-test-adapters"
         pattern="*${{ runner.os }}-${{ runner.arch }}.zip"
+        requested="${{ inputs.version }}"
 
-        if [ "${{ inputs.version }}" = "latest" ]; then
+        # if requested version is "latest" ... get recent release
+        if [ "$requested" == "latest" ]; then
           tag=$(gh release view -R "$repo" --json tagName --jq .tagName)
         else
-          tag="${{ inputs.version }}"
+          # if requested version is exact match, use it.
+          if gh release view -R "$repo" "$requested" >/dev/null 2>&1; then
+            tag="$requested"
+          else
+            # find latest matching version
+            tag=$(gh release list -R "$repo" --json tagName --jq '.[].tagName' \
+                  | grep "^$requested" \
+                  | head -n1)
+          fi
         fi
         echo "version=$tag" >> $GITHUB_ENV
         echo "version=$tag" >> $GITHUB_OUTPUT
 
         gh release download "$tag" -R "$repo" -p "$pattern" --clobber -O release-archive.zip
-      env:
-        GH_TOKEN: ${{ github.token }}
 
     - name: Set MM_DATA_DIR
       shell: bash
