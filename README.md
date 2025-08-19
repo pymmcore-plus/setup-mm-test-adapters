@@ -1,7 +1,7 @@
 # Setup Micro-Manager Test Device Adapters
 
 A GitHub Action that downloads and installs platform-specific Micro-Manager test device adapters
-from the [mm-test-adapters](https://github.com/pymmcore-plus/mm-test-adapters/releases) repository.
+from the [mm-test-adapters](https://github.com/micro-manager/mm-test-adapters/releases) repository.
 
 ## Usage
 
@@ -10,7 +10,7 @@ from the [mm-test-adapters](https://github.com/pymmcore-plus/mm-test-adapters/re
   uses: pymmcore-plus/setup-mm-test-adapters@main
   with:
     # all inputs are optional
-    version: latest  # or a specific YYYYMMDD version
+    version: latest  # or a specific version, e.g. 74, or 74.8a678cdf
     destination: ./mm-test-adapters
 ```
 
