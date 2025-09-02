@@ -10,7 +10,7 @@ from the [mm-test-adapters](https://github.com/micro-manager/mm-test-adapters/re
   uses: pymmcore-plus/setup-mm-test-adapters@main
   with:
     # all inputs are optional
-    version: latest  # or a specific version, e.g. 74, or 74.8a678cdf
+    version: latest  # or a specific version, e.g. 74, or 74.20250829
     destination: ./mm-test-adapters
 ```
 
@@ -41,5 +41,5 @@ If `destination` is not not provided, adapters will be installed into a
 
 | Name | Description |
 |------|-------------|
-| `version` | Resolved adapter version (`YYYYMMDD`) |
+| `version` | Resolved adapter version (`DIV` or `DIV.YYYYMMDD`) |
 | `destination` | Final directory into which the adapters were extracted |
