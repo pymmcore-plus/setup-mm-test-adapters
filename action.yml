@@ -44,13 +44,7 @@ runs:
 
         # auto-detect device interface version from installed pymmcore/pymmcore-nano
         if [ "$requested" == "auto" ]; then
-          detect='
-try:
-    from pymmcore import __version__ as v
-except ImportError:
-    from pymmcore_nano import __version__ as v
-print(v.split(".")[3])
-'
+          detect='import importlib, importlib.util; v=(importlib.import_module("pymmcore") if importlib.util.find_spec("pymmcore") else importlib.import_module("pymmcore_nano")).__version__; print(v.split(".")[3])'
           if ver=$(python -c "$detect" 2>/dev/null) && [ -n "$ver" ]; then
             requested="$ver"
           elif command -v uv &>/dev/null && ver=$(uv run --no-sync python -c "$detect" 2>/dev/null) && [ -n "$ver" ]; then
