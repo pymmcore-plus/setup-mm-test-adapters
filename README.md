@@ -6,20 +6,28 @@ from the [mm-test-adapters](https://github.com/micro-manager/mm-test-adapters/re
 ## Usage
 
 ```yaml
-- name: Install MM test adapters
-  uses: pymmcore-plus/setup-mm-test-adapters@main
+# Auto-detect version from installed pymmcore/pymmcore-nano (must run after uv sync / pip install)
+- uses: pymmcore-plus/setup-mm-test-adapters@main
+
+# Or specify a version explicitly
+- uses: pymmcore-plus/setup-mm-test-adapters@main
   with:
-    # all inputs are optional
-    version: latest  # or a specific version, e.g. 74, or 74.20250829
-    destination: ./mm-test-adapters
+    version: latest  # or a specific version, e.g. "75", or "74.20250829"
+    destination: ./mm-test-adapters  # optional, defaults to pymmcore-plus install location
 ```
 
 ## Inputs
 
 | Name | Description | Required | Default |
 |------|-------------|----------|---------|
-| `version` | Version to install | No | `latest` |
+| `version` | Version to install (`"auto"`, `"latest"`, or a specific version like `75`) | No | `auto` |
 | `destination` | Directory where test adapters will be installed | No | _See below_ |
+
+When `version` is `"auto"` (the default), the action detects the device interface
+version from the installed `pymmcore` or `pymmcore-nano` package. This requires
+Python to be available and the package to be installed _before_ this action runs
+(e.g. after `uv sync` or `pip install`). If detection fails, it falls back to
+`"latest"`.
 
 If `destination` is not not provided, adapters will be installed into a
 `Micro-Manager-YYYYMMDD` folder inside the  default

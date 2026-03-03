@@ -15,9 +15,11 @@ inputs:
     required: false
     default: ""
   version:
-    description: Version tag to install (or "latest")
+    description: |
+      Version tag to install, "latest" for the most recent release, or "auto"
+      to detect from installed pymmcore/pymmcore-nano. (default: "auto")
     required: false
-    default: "latest"
+    default: "auto"
 
 outputs:
   version:
@@ -39,6 +41,20 @@ runs:
         repo="micro-manager/mm-test-adapters"
         pattern="*${{ runner.os }}-${{ runner.arch }}.zip"
         requested="${{ inputs.version }}"
+
+        # auto-detect device interface version from installed pymmcore/pymmcore-nano
+        if [ "$requested" == "auto" ]; then
+          detect='import importlib, importlib.util; v=(importlib.import_module("pymmcore") if importlib.util.find_spec("pymmcore") else importlib.import_module("pymmcore_nano")).__version__; print(v.split(".")[3])'
+          if ver=$(python -c "$detect" 2>/dev/null) && [ -n "$ver" ]; then
+            requested="$ver"
+          elif command -v uv &>/dev/null && ver=$(uv run --no-sync python -c "$detect" 2>/dev/null) && [ -n "$ver" ]; then
+            requested="$ver"
+          else
+            echo "::warning::Could not auto-detect device interface version, falling back to 'latest'"
+            requested="latest"
+          fi
+          echo "Resolved auto → $requested"
+        fi
 
         # if requested version is "latest" ... get recent release
         if [ "$requested" == "latest" ]; then
