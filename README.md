@@ -6,14 +6,17 @@ from the [mm-test-adapters](https://github.com/micro-manager/mm-test-adapters/re
 ## Usage
 
 ```yaml
-# Auto-detect version from installed pymmcore/pymmcore-nano (must run after uv sync / pip install)
+# Auto-detect version from installed pymmcore/pymmcore-nano
+# (must run after uv sync / pip install)
 - uses: pymmcore-plus/setup-mm-test-adapters@main
 
 # Or specify a version explicitly
 - uses: pymmcore-plus/setup-mm-test-adapters@main
   with:
-    version: latest  # or a specific version, e.g. "75", or "74.20250829"
-    destination: ./mm-test-adapters  # optional, defaults to pymmcore-plus install location
+    # or a specific version, e.g. "75", or "74.20250829"
+    version: latest
+    # optional, defaults to pymmcore-plus install location
+    destination: ./mm-test-adapters  
 ```
 
 ## Inputs
