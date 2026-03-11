@@ -73,7 +73,18 @@ runs:
         echo "version=$tag" >> $GITHUB_ENV
         echo "version=$tag" >> $GITHUB_OUTPUT
 
-        gh release download "$tag" -R "$repo" -p "$pattern" --clobber -O release-archive.zip
+        for attempt in 1 2 3; do
+          if gh release download "$tag" -R "$repo" -p "$pattern" --clobber -O release-archive.zip; then
+            break
+          fi
+          if [ "$attempt" -lt 3 ]; then
+            echo "::warning::Download attempt $attempt failed, retrying in 5s..."
+            sleep 5
+          else
+            echo "::error::Download failed after 3 attempts"
+            exit 1
+          fi
+        done
 
     - name: Set MM_DATA_DIR
       shell: bash
