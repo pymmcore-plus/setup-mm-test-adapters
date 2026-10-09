@@ -31,3 +31,16 @@ jobs:
           fi
           echo "✅ Found $expected, listing contents:"
           ls -la "$expected"
+
+  resolve-prefix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: setup-mm
+        uses: ./
+        with:
+          version: "71"
+          destination: ./mm-adapters
+      - name: Verify highest DIV 71 release was picked
+        shell: bash
+        run: test "${{ steps.setup-mm.outputs.version }}" = "71.20250318"
