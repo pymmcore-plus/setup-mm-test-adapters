@@ -24,7 +24,7 @@ inputs:
 outputs:
   version:
     description: Resolved adapter version
-    value: ${{ steps.get-version.outputs.version }}
+    value: ${{ steps.download.outputs.version }}
   mm-data-dir:
     description: Directory where adapters were extracted
     value: ${{ steps.set-path.outputs.mm-data-dir }}
