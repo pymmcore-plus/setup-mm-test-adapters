@@ -24,7 +24,7 @@ inputs:
 outputs:
   version:
     description: Resolved adapter version
-    value: ${{ steps.get-version.outputs.version }}
+    value: ${{ steps.download.outputs.version }}
   mm-data-dir:
     description: Directory where adapters were extracted
     value: ${{ steps.set-path.outputs.mm-data-dir }}
@@ -64,11 +64,16 @@ runs:
           if gh release view -R "$repo" "$requested" >/dev/null 2>&1; then
             tag="$requested"
           else
-            # find latest matching version
-            tag=$(gh release list -R "$repo" --json tagName --jq '.[].tagName' \
-                  | grep "^$requested" \
-                  | head -n1)
+            # find highest matching version (by version number, not release date)
+            tag=$(gh release list -R "$repo" -L 1000 --json tagName --jq "
+              [.[].tagName | select(startswith(\"$requested\"))]
+              | sort_by(split(\".\") | map(ltrimstr(\"post\") | tonumber? // 0))
+              | last // empty")
           fi
+        fi
+        if [ -z "$tag" ]; then
+          echo "::error::No release found matching '$requested'"
+          exit 1
         fi
         echo "version=$tag" >> $GITHUB_ENV
         echo "version=$tag" >> $GITHUB_OUTPUT
